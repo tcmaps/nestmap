@@ -8,7 +8,8 @@ def gen_db(dbfile):
 
     dbin = sqlite3.connect(dbfile)
     dbout = sqlite3.connect(':memory:'); dbcur = dbout.cursor()
-    dbcur.execute("CREATE TABLE encount (spawn VARCHAR PRIMARY KEY, poke INT, count INT DEFAULT 0)")
+    dbcur.execute("CREATE TABLE encount (spawn VARCHAR, poke INT, count INT DEFAULT 0, \
+                    PRIMARY KEY (spawn, poke) )")
     
     for i in range(151):
         
