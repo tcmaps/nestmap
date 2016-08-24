@@ -93,19 +93,12 @@ def main():
         
     log.info("DB ok. Loggin' in...")
     
-    api = api_init(config)
-    if api == None:   
-        log.error('Login failed!'); return
-    else:
-        log.info('API online! Scan starts in 5sec...')
-    time.sleep(5)
-    
     db = sqlite3.connect('db2.sqlite')
     db_cur = db.cursor()
     
     run = 1
     while run:
-    
+        
         _ccnt = 1
         
         db_cur.execute("SELECT cell_id FROM queque ORDER BY spawn_count LIMIT %d" % config.limit)
@@ -113,87 +106,94 @@ def main():
         scan_queque = [x[0] for x in db_cur.fetchall()]
         
         if len(scan_queque) == 0: log.info('Nothing to scan!'); return
-                
+
+        api = api_init(config)
+        if api == None:   
+            log.error('Login failed!'); return
+        else:
+            log.info('API online! Scan starts in 5sec...')
+        time.sleep(5)
+  
         for queq in scan_queque:    
+            
+            try:      
                 
-            _ecnt = [0,0]
-            traverse = 0; targets = []
-            cell = CellId.from_token(queq)
-            
-            _ll = CellId.to_lat_lng(cell)
-            lat, lng, alt = _ll.lat().degrees, _ll.lng().degrees, 0
-            cell_ids = [cell.id()]
-            
-            try:
-                response_dict = get_response(cell_ids, lat, lng, alt, api,config)
-            except NotLoggedInException:
-                del api; api = api_init(config)
-                response_dict = get_response(cell_ids, lat, lng, alt, api,config)  
-            
-            log.info('Scanning macrocell {} of {}.'.format(_ccnt,(len(scan_queque))))
-                    
-            for _map_cell in response_dict['responses']['GET_MAP_OBJECTS']['map_cells']:                        
+                _ecnt = [0,0]
+                traverse = 0; targets = []
+                cell = CellId.from_token(queq)
                 
-                if 'nearby_pokemons' in _map_cell:
-                    for _poke in _map_cell['nearby_pokemons']:
-                        _ecnt[0]+=1;
-                        _s = hex(_poke['encounter_id'])
-                        db_cur.execute("INSERT OR IGNORE INTO encounters (encounter_id, pokemon_id, encounter_time) VALUES ('{}',{},{})"
-                        "".format(_s.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000)))
+                _ll = CellId.to_lat_lng(cell)
+                lat, lng, alt = _ll.lat().degrees, _ll.lng().degrees, 0
+                cell_ids = [cell.id()]
+                
+                response_dict = get_response(cell_ids, lat, lng, alt, api, config)
+                
+                log.info('Scanning macrocell {} of {}.'.format(_ccnt,(len(scan_queque))))
                         
-                        if _poke['pokemon_id'] in watchlist:
-                            traverse = 1
-                            targets.append(_poke['encounter_id'])
-                            log.info('{} nearby!'.format(pokenames[_poke['pokemon_id']]))
+                for _map_cell in response_dict['responses']['GET_MAP_OBJECTS']['map_cells']:                        
+                    
+                    if 'nearby_pokemons' in _map_cell:
+                        for _poke in _map_cell['nearby_pokemons']:
+                            _ecnt[0]+=1;
+                            _s = hex(_poke['encounter_id'])
+                            db_cur.execute("INSERT OR IGNORE INTO encounters (encounter_id, pokemon_id, encounter_time) VALUES ('{}',{},{})"
+                            "".format(_s.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000)))
                             
-                if 'catchable_pokemons' in _map_cell:
-                    for _poke in _map_cell['catchable_pokemons']:
-                        _ecnt[1]+=1;
-                        _s = hex(_poke['encounter_id'])
-                        db_cur.execute("INSERT OR REPLACE INTO encounters (spawn_id, encounter_id, pokemon_id, encounter_time, expire_time) VALUES ('{}','{}',{},{},{})"
-                        "".format(_poke['spawn_point_id'],_s.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000),int(_poke['expiration_timestamp_ms']/1000)))
+                            if _poke['pokemon_id'] in watchlist:
+                                traverse = 1
+                                targets.append(_poke['encounter_id'])
+                                log.info('{} nearby!'.format(pokenames[_poke['pokemon_id']]))
                                 
-            db.commit
-
-            if traverse:                                     
-                _remaining = len(targets)
-                log.info('Narrow search for %d Pokemon...' % len(targets))
-                time.sleep(config.delay)
-                
-                _scnt = 1
-                subcells = susub_cells(cell)
-                for _sub in subcells:
-                    log.info('Scanning subcell {} of up to 16.'.format(_scnt,(len(scan_queque))))
-                    
-                    _ll = CellId.to_lat_lng(_sub)
-                    lat, lng, alt = _ll.lat().degrees, _ll.lng().degrees, 0
-                    cell_ids = get_cell_ids(lat, lng, 100)
-                    
-                    try: response_dict = get_response(cell_ids, lat, lng, alt, api,config)
-                    except NotLoggedInException: del api; api = api_init(config); response_dict = get_response(cell_ids, lat, lng, alt, api,config)
-                                                
-                    for _map_cell in response_dict['responses']['GET_MAP_OBJECTS']['map_cells']:
-                        if 'catchable_pokemons' in _map_cell:
-                            for _poke in _map_cell['catchable_pokemons']:
-                                _ecnt[1]+=1;
-                                _s = hex(_poke['encounter_id'])
-                                db_cur.execute("INSERT OR REPLACE INTO encounters (spawn_id, encounter_id, pokemon_id, encounter_time, expire_time) VALUES ('{}','{}',{},{},{})"
-                                "".format(_poke['spawn_point_id'],_s.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000),int(_poke['expiration_timestamp_ms']/1000)))
-                                
-                                if _poke['encounter_id'] in targets:
-                                    log.info('Tracked down {}!'.format(pokenames[_poke['pokemon_id']]))
-                                    _remaining -=1
-                                    log.info('%d Pokemon remaining...' % _remaining)
-                        
-                    if _remaining <= 0: break        
-                    time.sleep(config.delay)
-                    _scnt += 1
-
-            db.commit()
-            log.info("Encounters: {} coarse, {} fine...".format(*_ecnt))
-            time.sleep(config.delay)
-            _ccnt +=1
+                    if 'catchable_pokemons' in _map_cell:
+                        for _poke in _map_cell['catchable_pokemons']:
+                            _ecnt[1]+=1;
+                            _s = hex(_poke['encounter_id'])
+                            db_cur.execute("INSERT OR REPLACE INTO encounters (spawn_id, encounter_id, pokemon_id, encounter_time, expire_time) VALUES ('{}','{}',{},{},{})"
+                            "".format(_poke['spawn_point_id'],_s.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000),int(_poke['expiration_timestamp_ms']/1000)))
+                                    
+                db.commit
     
+                if traverse:                                     
+                    _remaining = len(targets)
+                    log.info('Narrow search for %d Pokemon...' % len(targets))
+                    time.sleep(config.delay)
+                    
+                    _scnt = 1
+                    subcells = susub_cells(cell)
+                    for _sub in subcells:
+                        log.info('Scanning subcell {} of up to 16.'.format(_scnt,(len(scan_queque))))
+                        
+                        _ll = CellId.to_lat_lng(_sub)
+                        lat, lng, alt = _ll.lat().degrees, _ll.lng().degrees, 0
+                        cell_ids = get_cell_ids(lat, lng, 100)
+                        
+                        try: response_dict = get_response(cell_ids, lat, lng, alt, api,config)
+                        except NotLoggedInException: del api; api = api_init(config); response_dict = get_response(cell_ids, lat, lng, alt, api,config)
+                                                    
+                        for _map_cell in response_dict['responses']['GET_MAP_OBJECTS']['map_cells']:
+                            if 'catchable_pokemons' in _map_cell:
+                                for _poke in _map_cell['catchable_pokemons']:
+                                    _ecnt[1]+=1;
+                                    _s = hex(_poke['encounter_id'])
+                                    db_cur.execute("INSERT OR REPLACE INTO encounters (spawn_id, encounter_id, pokemon_id, encounter_time, expire_time) VALUES ('{}','{}',{},{},{})"
+                                    "".format(_poke['spawn_point_id'],_s.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000),int(_poke['expiration_timestamp_ms']/1000)))
+                                    
+                                    if _poke['encounter_id'] in targets:
+                                        log.info('Tracked down {}!'.format(pokenames[_poke['pokemon_id']]))
+                                        _remaining -=1
+                                        log.info('%d Pokemon remaining...' % _remaining)
+                            
+                        if _remaining <= 0: break        
+                        time.sleep(config.delay)
+                        _scnt += 1
+    
+                db.commit()
+                log.info("Encounters: {} coarse, {} fine...".format(*_ecnt))
+                time.sleep(config.delay)
+                _ccnt +=1
+            
+            except NotLoggedInException: del api; break
+        
         log.info("Rinsing 'n' Repeating...")           
     
 
