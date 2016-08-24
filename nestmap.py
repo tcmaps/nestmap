@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+VERSION = 1.2
+
 """
 based on: pgoapi - Pokemon Go API
 Copyright (c) 2016 tjado <https://github.com/tejado>
@@ -36,7 +38,7 @@ import argparse
 from s2sphere import CellId
 from utils import get_watchlist, get_pokenames
 from pgoapi.exceptions import NotLoggedInException
-from utils import api_init, get_response, get_cell_ids, susub_cells
+from utils import check_db, api_init, get_response, get_cell_ids, susub_cells
 
 log = logging.getLogger(__name__)
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
@@ -75,6 +77,11 @@ def init_config():
     if config.auth_service not in ['ptc', 'google']:
         log.error("Invalid Auth service specified! ('ptc' or 'google')")
         return None
+    
+    dbversion = check_db('db2.sqlite')     
+    if dbversion != VERSION:
+        log.error('Database version mismatch! Expected {}, got {}...'.format(VERSION,dbversion))
+        return
 
     return config
 
@@ -134,10 +141,11 @@ def main():
                     
                     if 'nearby_pokemons' in _map_cell:
                         for _poke in _map_cell['nearby_pokemons']:
-                            _ecnt[0]+=1;
+                            _ecnt[0]+=1;                            
                             _s = hex(_poke['encounter_id'])
-                            db_cur.execute("INSERT OR IGNORE INTO encounters (encounter_id, pokemon_id, encounter_time) VALUES ('{}',{},{})"
-                            "".format(_s.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000)))
+                            _c = CellId(_map_cell['s2_cell_id']).to_token()
+                            db_cur.execute("INSERT OR IGNORE INTO encounters (encounter_id, cell_id, pokemon_id, encounter_time) VALUES ('{}','{}',{},{})"
+                            "".format(_s.strip('L'),_c.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000)))
                             
                             if _poke['pokemon_id'] in watchlist:
                                 traverse = 1
