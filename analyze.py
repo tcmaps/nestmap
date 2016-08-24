@@ -26,30 +26,28 @@ def gen_db(dbfile):
     dbout.commit()
     return dbout
 
-def gen_csv(db, filename):
+def gen_csv(filename):
     
     f = open(filename,'w')
+    db = sqlite3.connect('db2.sqlite')
     pname = get_pokenames('pokes.txt')
-    f.write('spawn_id, pokemon_id, pokemon_name, count, latitude, longitude\n')
+    f.write('spawn_id, pokemon_id, pokemon_name, latitude, longitude\n')
+
+    spwns = db.execute("SELECT spawn_id, pokemon_id FROM encounters").fetchall()
     
-    for i in range(151):
-    
-        spwns = db.cursor().execute("SELECT spawn, count FROM encount "
-                        "WHERE poke = %d AND count > 1 ORDER BY count DESC" % i).fetchall()
-        
-        if len(spwns) > 0:
-            for s,c in spwns:
-                _ll = CellId.from_token(s).to_lat_lng()
-                lat, lng, = _ll.lat().degrees, _ll.lng().degrees
-                f.write("{},{},{},{},{},{}\n".format(s,i,pname[i],c,lat,lng))
+    if len(spwns) > 0:
+        for s,i in spwns:
+            _ll = CellId.from_token(s).to_lat_lng()
+            lat, lng, = _ll.lat().degrees, _ll.lng().degrees
+            f.write("{},{},{},{},{}\n".format(s,i,pname[i],lat,lng))
                 
     print('Done!')
 
 def main():
-    db = gen_db('db2.sqlite')
+    #db = gen_db('db2.sqlite')
     
     if sys.argv[1] == 'export' and sys.argv[2] == 'csv':
-        gen_csv(db, sys.argv[3])
+        gen_csv(sys.argv[3])
     
 if __name__ == '__main__':
     main()
