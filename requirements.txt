@@ -1,9 +1,10 @@
+future==0.15.2
+geographiclib==1.46.3
 geopy==1.11.0
-protobuf>=3.0.0a3
+gpsoauth==0.3.0
+setuptools==20.10.1
 requests==2.10.0
 s2sphere==0.2.4
-gpsoauth==0.3.0
-geographiclib
-six
-xxhash
-sqlite3
+six==1.10.0
+xxhash==0.6.1
+protobuf==3.0.0
