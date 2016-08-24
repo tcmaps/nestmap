@@ -29,7 +29,7 @@ def gen_csv(db, filename):
     
     f = open(filename,'w')
     pname = get_pokenames('pokes.txt')
-    f.write('spawn_id, pokemon_id, pokemon_name, count, latitude, longitude')
+    f.write('spawn_id, pokemon_id, pokemon_name, count, latitude, longitude\n')
     
     for i in range(151):
     
