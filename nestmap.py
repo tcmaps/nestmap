@@ -194,7 +194,7 @@ def main():
             time.sleep(config.delay)
             _ccnt +=1
     
-    log.info("Rinsing 'n' Repeating...")           
+        log.info("Rinsing 'n' Repeating...")           
     
 
 if __name__ == '__main__':

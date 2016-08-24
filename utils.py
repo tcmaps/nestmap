@@ -20,20 +20,21 @@ log = logging.getLogger(__name__)
 class Status3Exception(Exception):
     pass
 
-def check_db():
+def check_db(dbfile='db.sqlite'):
     
-    if not os.path.isfile('db.sqlite'):
+    if not os.path.isfile(dbfile):
         if os.name =='nt':
-            os.system('copy temp.db db.sqlite')
+            os.system('copy temp.db ' + dbfile)
         elif os.name =='posix':
-            os.system('cp temp.db db.sqlite')
+            os.system('cp temp.db ' + dbfile)
     
-    db = sqlite3.connect('db.sqlite')
+    db = sqlite3.connect(dbfile)
     version = db.cursor().execute("SELECT version FROM '_config'").fetchone()
     
     return version[0]
 
-def init_db(cells, db):
+def init_db(cells, dbfilename):
+    db = sqlite3.connect(dbfilename)
     counter=0    
     for cell in cells:
         db.cursor().execute("INSERT OR IGNORE INTO _queue (cell_id,cell_level) "
