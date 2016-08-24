@@ -33,7 +33,7 @@ def gen_csv(filename):
     pname = get_pokenames('pokes.txt')
     f.write('spawn_id, pokemon_id, pokemon_name, latitude, longitude\n')
 
-    spwns = db.execute("SELECT spawn_id, pokemon_id FROM encounters").fetchall()
+    spwns = db.execute("SELECT spawn_id, pokemon_id FROM encounters WHERE spawn_id IS NOT NULL").fetchall()
     
     if len(spwns) > 0:
         for s,i in spwns:
