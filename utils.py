@@ -69,13 +69,16 @@ def get_response(cell_ids, lat, lng, alt, api, config):
     
         api.set_position(lat, lng, alt)
         response_dict = api.get_map_objects(latitude=lat, longitude=lng, since_timestamp_ms = timestamps, cell_id = cell_ids)
-        if 'status' in response_dict['responses']['GET_MAP_OBJECTS']:
-            if response_dict['responses']['GET_MAP_OBJECTS']['status'] == 1:
-                return response_dict
-            if response_dict['responses']['GET_MAP_OBJECTS']['status'] == 3:
-                print "Account banned!"
-                raise Status3Exception
+        if 'responses' in response_dict:
+            if 'GET_MAP_OBJECTS' in response_dict['responses']:
+                if 'status' in response_dict['responses']['GET_MAP_OBJECTS']:
+                    if response_dict['responses']['GET_MAP_OBJECTS']['status'] == 1:
+                        return response_dict
+                    if response_dict['responses']['GET_MAP_OBJECTS']['status'] == 3:
+                        print "Account banned!"
+                        raise Status3Exception
 
+        log.error('Response malformed, retrying...')
         time.sleep(delay)
         delay += 5
 

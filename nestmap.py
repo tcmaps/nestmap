@@ -79,6 +79,12 @@ def init_config():
         return None
     
     dbversion = check_db('db2.sqlite')     
+    if dbversion == 1.1:
+        db = db = sqlite3.connect('db2.sqlite')
+        db.cursor().execute("ALTER TABLE encounters ADD cell_id VARCHAR")
+        db.cursor().execute("UPDATE _config SET version = 1.2 WHERE version = 1.1")
+        db.commit(); del db; dbversion = 1.2  
+    
     if dbversion != VERSION:
         log.error('Database version mismatch! Expected {}, got {}...'.format(VERSION,dbversion))
         return
@@ -145,7 +151,7 @@ def main():
                             _s = hex(_poke['encounter_id'])
                             _c = CellId(_map_cell['s2_cell_id']).to_token()
                             db_cur.execute("INSERT OR IGNORE INTO encounters (encounter_id, cell_id, pokemon_id, encounter_time) VALUES ('{}','{}',{},{})"
-                            "".format(_s.strip('L'),_c.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000)))
+                            "".format(_s.strip('L'),_c,_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000)))
                             
                             if _poke['pokemon_id'] in watchlist:
                                 traverse = 1
