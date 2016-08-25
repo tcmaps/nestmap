@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-VERSION = 1.2
+VERSION = 1.3
 
 """
 based on: pgoapi - Pokemon Go API
@@ -57,7 +57,8 @@ def init_config():
     parser.add_argument("-u", "--username", help="Username")
     parser.add_argument("-p", "--password", help="Password")
     parser.add_argument("-t", "--delay", help="rpc request interval", default=10, type=int)
-    parser.add_argument("-l", "--limit", help="clusters to monitor", default=100, type=int)
+    parser.add_argument("-s", "--step", help="instance / scan part", default=1, type=int)
+    parser.add_argument("--limit", help="clusters to monitor", default=100, type=int)
     parser.add_argument("-d", "--debug", help="Debug Mode", action='store_true', default=0)    
     config = parser.parse_args()
 
@@ -83,7 +84,15 @@ def init_config():
         db = db = sqlite3.connect('db2.sqlite')
         db.cursor().execute("ALTER TABLE encounters ADD cell_id VARCHAR")
         db.cursor().execute("UPDATE _config SET version = 1.2 WHERE version = 1.1")
-        db.commit(); del db; dbversion = 1.2  
+        db.commit(); del db; dbversion = 1.2
+    
+    if dbversion == 1.2:
+        db = db = sqlite3.connect('db2.sqlite')
+        db.cursor().execute("DROP TABLE queque")
+        db.cursor().execute("CREATE TABLE _queue (cell_id VARCHAR PRIMARY KEY)")        
+        db.cursor().execute("UPDATE _config SET version = 1.3 WHERE version = 1.2")
+        db.commit(); del db; dbversion = 1.3
+        import nestgen; nestgen.main()    
     
     if dbversion != VERSION:
         log.error('Database version mismatch! Expected {}, got {}...'.format(VERSION,dbversion))
@@ -112,9 +121,9 @@ def main():
     run = 1
     while run:
         
-        _ccnt = 1
+        _ccnt, y, z = 1, config.limit, (config.step-1)*config.limit 
         
-        db_cur.execute("SELECT cell_id FROM queque ORDER BY spawn_count LIMIT %d" % config.limit)
+        db_cur.execute("SELECT cell_id FROM _queue ORDER BY cell_id LIMIT %d,%d" % (z,y)); del y
         # http://stackoverflow.com/questions/3614277/how-to-strip-from-python-pyodbc-sql-returns
         scan_queque = [x[0] for x in db_cur.fetchall()]
         
@@ -141,7 +150,7 @@ def main():
                 
                 response_dict = get_response(cell_ids, lat, lng, alt, api, config)
                 
-                log.info('Scanning macrocell {} of {}.'.format(_ccnt,(len(scan_queque))))
+                log.info('Scanning macrocell {} of {}.'.format(_ccnt+z,z+(len(scan_queque))))
                         
                 for _map_cell in response_dict['responses']['GET_MAP_OBJECTS']['map_cells']:                        
                     
