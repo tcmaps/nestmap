@@ -10,7 +10,7 @@ def main():
     if not os.path.isfile('db2.sqlite'):
         db = sqlite3.connect('db2.sqlite')
         db.cursor().execute("CREATE TABLE _config (version DECIMAL (3) DEFAULT (1))")
-        db.cursor().execute("INSERT INTO _config (version) VALUES (1.2)") 
+        db.cursor().execute("INSERT INTO _config (version) VALUES (1.3)") 
         db.cursor().execute("CREATE TABLE _queue (cell_id    VARCHAR    PRIMARY KEY)")
         db.cursor().execute("CREATE TABLE encounters (\
                             encounter_id   VARCHAR,\
