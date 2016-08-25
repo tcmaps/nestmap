@@ -46,6 +46,10 @@ def gen_csv(filename):
 def main():
     #db = gen_db('db2.sqlite')
     
+    if len(sys.argv)<=1:
+        print('currently only supported command: analyze.py export csv <filename>')
+        return
+    
     if sys.argv[1] == 'export' and sys.argv[2] == 'csv':
         gen_csv(sys.argv[3])
     
