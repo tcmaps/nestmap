@@ -41,6 +41,7 @@ def main():
             .execute("SELECT cell FROM 'queque' ORDER BY count DESC").fetchall()]
     
     db = sqlite3.connect('db2.sqlite')
+    db.cursor().execute("DELETE FROM _queue")
     
     for cell in cells:
         subcells = sub_cells(CellId.from_token(cell))
