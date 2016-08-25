@@ -48,6 +48,7 @@ def main():
         for subcell in subcells:
             db.cursor().execute("INSERT OR IGNORE INTO _queue (cell_id) VALUES ('{}')".format(subcell.to_token()))
 
+    db.cursor().execute("VACUUM")
     db.commit(); print 'Donezo!'
     
 if __name__ == '__main__': main()
