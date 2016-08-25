@@ -81,12 +81,14 @@ def init_config():
     
     dbversion = check_db('db2.sqlite')     
     if dbversion == 1.1:
+        log.info('Converting DB from 1.1 to 1.2')
         db = db = sqlite3.connect('db2.sqlite')
         db.cursor().execute("ALTER TABLE encounters ADD cell_id VARCHAR")
         db.cursor().execute("UPDATE _config SET version = 1.2 WHERE version = 1.1")
         db.commit(); del db; dbversion = 1.2
     
     if dbversion == 1.2:
+        log.info('Converting DB from 1.2 to 1.3')
         db = db = sqlite3.connect('db2.sqlite')
         db.cursor().execute("DROP TABLE queque")
         db.cursor().execute("CREATE TABLE _queue (cell_id VARCHAR PRIMARY KEY)")        
