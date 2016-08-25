@@ -38,7 +38,7 @@ def main():
     
     # tiling down
     cells = [x[0] for x in dbtmp.cursor()\
-            .execute("SELECT cell FROM 'queque' ORDER BY count").fetchall()]
+            .execute("SELECT cell FROM 'queque' ORDER BY count DESC").fetchall()]
     
     db = sqlite3.connect('db2.sqlite')
     
