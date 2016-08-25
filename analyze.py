@@ -46,7 +46,7 @@ def gen_csv(filename):
 def main():
     #db = gen_db('db2.sqlite')
     
-    if len(sys.argv)<=1:
+    if len(sys.argv)<4:
         print('currently only supported command: analyze.py export csv <filename>')
         return
     
