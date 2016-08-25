@@ -109,7 +109,7 @@ def main():
         
     db = sqlite3.connect(config.dbfile)
     db_cur = db.cursor()
-    db_cur.execute("SELECT cell_id FROM '_queue' WHERE cell_level = %d ORDER BY cell_id" % config.level)
+    db_cur.execute("SELECT cell_id FROM '_queue' WHERE cell_level = %d ORDER BY rowid" % config.level)
     _tstats = [0, 0, 0, 0]
     
     scan_queque = [x[0] for x in db_cur.fetchall()]
