@@ -2,7 +2,13 @@
 
 import sqlite3, sys
 from s2sphere import CellId
-from utils import get_pokenames
+
+def get_pokenames(filename):
+    plist = []
+    f = open(filename,'r')
+    for l in f.readlines():
+        plist.append(l.strip())
+    return plist
 
 def gen_csv_counted(filename, dbfile):
 
