@@ -27,25 +27,21 @@ Author: tjado <https://github.com/tejado>
         TC    <reddit.com/u/Tr4sHCr4fT>
 """
 
-import os
-import sys
-import time
-import json
-import argparse
+import os, time, json
+import argparse, logging
 import sqlite3
-import logging
 
 from s2sphere import CellId, LatLng
+from fmcore.db import check_db, fill_db
+from fmcore.apiwrap import api_init, get_response
+from fmcore.utils import set_bit, get_cell_ids, susub_cells, cover_circle, cover_square
 from pgoapi.exceptions import NotLoggedInException
-from utils import api_init, get_response, susub_cells, get_cell_ids
-from utils import check_db, init_db, set_bit, cover_circle, cover_square
 
 log = logging.getLogger(__name__)
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 def init_config():
     parser = argparse.ArgumentParser()     
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(module)10s] [%(levelname)5s] %(message)s')
 
     load   = {}
     config_file = "config.json"
@@ -89,14 +85,14 @@ def init_config():
         return
     
     if config.location:
-        from utils import get_pos_by_name
+        from fmcore.utils import get_pos_by_name
         lat, lng, alt = get_pos_by_name(config.location); del alt
         if config.radius:
             cells = cover_circle(lat, lng, config.radius, config.level)
         elif config.width:
             cells = cover_square(lat, lng, config.width, config.level)
         else: log.error('Area size not given!'); return
-        log.info('Added %d cells to scan queue.' % init_db(cells, config.dbfile))
+        log.info('Added %d cells to scan queue.' % fill_db(config.dbfile, cells))
         del cells, lat, lng
     
     return config
@@ -109,7 +105,7 @@ def main():
         
     db = sqlite3.connect(config.dbfile)
     db_cur = db.cursor()
-    db_cur.execute("SELECT cell_id FROM '_queue' WHERE cell_level = %d ORDER BY rowid" % config.level)
+    db_cur.execute("SELECT cell_id FROM '_queue' WHERE cell_level = %d ORDER BY cell_id" % config.level)
     _tstats = [0, 0, 0, 0]
     
     scan_queque = [x[0] for x in db_cur.fetchall()]
