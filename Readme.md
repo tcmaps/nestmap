@@ -13,7 +13,7 @@ A tool for locating & analyzing nests the easy way.
 ### Prereqs
 
 1. Have your Fastmap *db.sqlite* in Nestmap's dir  
-**If you don't have a Fastmap bootstrap db.sqlite yet,** *Get https://github.com/Tr4sHCr4fT/fastmap*
+**If you don't have a Fastmap bootstrap db.sqlite yet,** *Get https://github.com/Tr4sHCr4fT/fastmap*   
 *or use* **bootstrap.py** *to create one! (refer to mentioned Fastmap project for usage instructions)*
 
 2. Put your account credentials in *config.json*   
