@@ -91,15 +91,22 @@ def get_encryption_lib_path():
         err = "Unexpected/unsupported platform '{}'".format(sys.platform)
         log.error(err)
         raise Exception(err)
+    
+    # check for lib in root dir or PATH
+    if os.path.isfile(lib_name):
+        return lib_name
+    
+    test_paths = ["../pgoapi/magiclib","../pgoapi/libencrypt","../magiclib","../libencrypt"]
+    
+    for test_path in test_paths:
+        lib_path = os.path.join(os.path.dirname(__file__), test_path, lib_name)
+        if os.path.isfile(lib_path): return lib_path
 
-    lib_path = os.path.join(os.path.dirname(__file__), "../pgoapi/magiclib", lib_name)
+    err = "Could not find [{}] encryption library '{}'".format(sys.platform, lib_name)
+    log.error(err)
+    raise Exception(err)
 
-    if not os.path.isfile(lib_path):
-        err = "Could not find {} encryption library {}".format(sys.platform, lib_path)
-        log.error(err)
-        raise Exception(err)
-
-    return lib_path
+    return None
 
 def limit_cells(cells, limit=100):
     return cells[:limit]
