@@ -17,7 +17,7 @@ A tool for locating & analyzing nests the easy way.
 *or use* **bootstrap.py** *to create one! (refer to mentioned Fastmap project for usage instructions)*
 
 2. Put your account credentials in *config.json*   
-3. if used "nestgen.py" before, run *nestmap.py --regen* once
+3. If used "nestgen.py" before, run *nestmap.py --regen* once
 
 ### Usage
 
