@@ -40,7 +40,7 @@ def init_config():
     parser.add_argument("-t", "--delay", help="rpc request interval", default=10, type=int)
     parser.add_argument("-s", "--step", help="instance / scan part", default=1, type=int)
     parser.add_argument("--limit", help="cells per queue", default=100, type=int)
-    parser.add_argument("--ndbfile", help="Nestmap database", default='db2.sqlite')
+    parser.add_argument("--ndbfile", help="Nestmap database", default='nm.sqlite')
     parser.add_argument("--fdbfile", help="Fastmap database", default='db.sqlite')
     parser.add_argument("--regen", help="Reset scan queue", action='store_true', default=0)    
     parser.add_argument("-d", "--debug", help="Debug Mode", action='store_true', default=0)    
@@ -63,6 +63,10 @@ def init_config():
         log.error("Invalid Auth service specified! ('ptc' or 'google')")
         return None
 
+    if config.ndbfile == 'nm.sqlite':
+        if os.path.isfile('db2.sqlite'):
+            config.ndbfile = 'db2.sqlite';
+    
     if os.path.isfile(config.ndbfile):
         log.info('Will use existing Nestmap DB.')
     else:
@@ -101,7 +105,8 @@ def main():
         
         if config.regen or len(scan_queque) == 0:
             log.info('Generating scan queue...')
-            if not gen_que(config.ndbfile, config.fdbfile): return
+            if gen_que(config.ndbfile, config.fdbfile): continue
+            else: return
 
         api = api_init(config)
         if api == None:   
