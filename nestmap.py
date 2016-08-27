@@ -121,13 +121,14 @@ def main():
                 
                 _ecnt = [0,0]
                 traverse = 0; targets = []
-                cell = CellId.from_token(queq)
                 
-                _ll = CellId.to_lat_lng(cell)
-                lat, lng, alt = _ll.lat().degrees, _ll.lng().degrees, 0
+                cell = CellId.from_token(queq)
+                lat = CellId.to_lat_lng(cell).lat().degrees
+                lng = CellId.to_lat_lng(cell).lng().degrees
+                
                 cell_ids = [cell.id()]
                 
-                response_dict = get_response(cell_ids, lat, lng, alt, api, config)
+                response_dict = get_response(api, cell_ids, lat, lng)
                 
                 log.info('Scanning cell {} of {}.'.format(_ccnt+z,z+(len(scan_queque))))
                         
@@ -153,7 +154,7 @@ def main():
                             dbc.execute("INSERT OR REPLACE INTO encounters (spawn_id, encounter_id, pokemon_id, encounter_time, expire_time) VALUES ('{}','{}',{},{},{})"
                             "".format(_poke['spawn_point_id'],_s.strip('L'),_poke['pokemon_id'],int(_map_cell['current_timestamp_ms']/1000),int(_poke['expiration_timestamp_ms']/1000)))
                                     
-                db.commit
+                db.commit()
     
                 if traverse:                                     
                     _remaining = len(targets)
@@ -165,12 +166,12 @@ def main():
                     for _sub in subcells:
                         log.debug('Scanning subcell {} of up to 16.'.format(_scnt,(len(scan_queque))))
                         
-                        _ll = CellId.to_lat_lng(_sub)
-                        lat, lng, alt = _ll.lat().degrees, _ll.lng().degrees, 0
+                        lat = CellId.to_lat_lng(_sub).lat().degrees
+                        lng = CellId.to_lat_lng(_sub).lng().degrees
                         cell_ids = get_cell_ids(cover_circle(lat, lng, 100))
                         
-                        try: response_dict = get_response(cell_ids, lat, lng, alt, api,config)
-                        except NotLoggedInException: del api; api = api_init(config); response_dict = get_response(cell_ids, lat, lng, alt, api,config)
+                        try: response_dict = get_response(api, cell_ids, lat, lng)
+                        except NotLoggedInException: api = None; api = api_init(config); response_dict = get_response(api, cell_ids, lat, lng)
                                                     
                         for _map_cell in response_dict['responses']['GET_MAP_OBJECTS']['map_cells']:
                             if 'catchable_pokemons' in _map_cell:
@@ -194,7 +195,7 @@ def main():
                 time.sleep(config.delay)
                 _ccnt +=1
             
-            except NotLoggedInException: del api; break
+            except NotLoggedInException: api = None; break
         
         log.info("Rinsing 'n' Repeating...")           
 

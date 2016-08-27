@@ -15,11 +15,11 @@ log = logging.getLogger(__name__)
 class Status3Exception(Exception):
     pass
 
-def api_init(config):
+def api_init(account):
     api = PGoApi()
-    
+
     api.set_position(360,360,0)  
-    api.set_authentication(provider = config.auth_service, username = config.username, password =  config.password)
+    api.set_authentication(provider = account.auth_service, username = account.username, password =  account.password)
     api.activate_signature(get_encryption_lib_path()); api.get_player()
 
     time.sleep(1)
@@ -34,7 +34,7 @@ def api_init(config):
             else: return None
 
 
-def get_response(cell_ids, lat, lng, alt, api, config):
+def get_response(api, cell_ids, lat, lng, alt=0):
     
     timestamps = [0,] * len(cell_ids)
     response_dict = []

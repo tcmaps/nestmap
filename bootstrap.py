@@ -34,7 +34,7 @@ import sqlite3
 from s2sphere import CellId, LatLng
 from fmcore.db import check_db, fill_db
 from fmcore.apiwrap import api_init, get_response
-from fmcore.utils import set_bit, get_cell_ids, susub_cells, cover_circle, cover_square
+from fmcore.utils import set_bit, get_cell_ids, sub_cells_normalized, cover_circle, cover_square
 from pgoapi.exceptions import NotLoggedInException
 
 log = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ def init_config():
     parser.add_argument("-r", "--radius", help="area circle radius", type=int)
     parser.add_argument("-w", "--width", help="area square width", type=int)
     parser.add_argument("-f", "--dbfile", help="DB filename", default='db.sqlite')
-    parser.add_argument("--level", help="cell level used for tiling", default=13, type=int)
+    parser.add_argument("--level", help="cell level used for tiling", default=12, type=int)
     parser.add_argument("-t", "--delay", help="rpc request interval", default=10, type=int)
     parser.add_argument("-d", "--debug", help="Debug Mode", action='store_true', default=0)
     parser.add_argument("-n", "--test", help="Beta algorithm", action='store_true', default=0)        
@@ -129,20 +129,17 @@ def main():
         log.info('Scan {} of {}.'.format(_tstats[0],(len(scan_queque))))
         
         cell = CellId.from_token(que)
-        _ll = CellId.to_lat_lng(cell)
-        lat, lng, alt = _ll.lat().degrees, _ll.lng().degrees, 0
+        lat = CellId.to_lat_lng(cell).lat().degrees
+        lng = CellId.to_lat_lng(cell).lng().degrees
         
-        if config.test:
-            cell_ids = get_cell_ids(lat, lng, 1500)
-        else:
-            cells = susub_cells(cell)
-            cell_ids = sorted([x.id() for x in cells])
+        if config.test: cell_ids = get_cell_ids(cover_circle(lat, lng, 1500))
+        else: cell_ids = get_cell_ids(sub_cells_normalized(cell))
         
         try:
-            response_dict = get_response(cell_ids, lat, lng, alt, api,config)
+            response_dict = get_response(api, cell_ids, lat, lng)
         except NotLoggedInException:
-            del api; api = api_init(config)
-            response_dict = get_response(cell_ids, lat, lng, alt, api,config)  
+            api = None; api = api_init(config)
+            response_dict = get_response(api, cell_ids, lat, lng)  
                 
         for _map_cell in response_dict['responses']['GET_MAP_OBJECTS']['map_cells']:
             _cell = CellId(_map_cell['s2_cell_id']).to_token()                        
@@ -188,6 +185,8 @@ def main():
         time.sleep(int(config.delay))
 
     log.info('Scanned {} cells; got {} Gyms, {} Pokestops, {} Spawns.'.format(*_tstats))
+
+
 
 if __name__ == '__main__':
     main()
