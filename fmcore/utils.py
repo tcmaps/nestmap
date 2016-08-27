@@ -10,6 +10,12 @@ from s2sphere import CellId, Angle, LatLng, LatLngRect, Cap, RegionCoverer
 log = logging.getLogger(__name__)
 
 
+class PoGoAccount():
+    def __init__(self, auth, login, passw):
+        self.auth_service = auth
+        self.username = login
+        self.password = passw
+
 def set_bit(value, bit):
     return value | (1<<bit)
 
@@ -27,6 +33,14 @@ def get_pokenames(filename):
         plist.append(l.strip())
     return plist
 
+def get_accounts(filename):
+    accs = []
+    f = open(filename,'r')
+    for l in f.readlines():
+        acc = (l.strip().split(':'))
+        accs.append(PoGoAccount('ptc',acc[0],acc[1]))
+    return accs
+
 def sub_cells(cell):
     cells = []
     for i in range(4):
@@ -38,6 +52,17 @@ def susub_cells(cell):
     for subcell in sub_cells(cell):
         for susubcell in sub_cells(subcell):
             cells.append(susubcell)    
+    return sorted(cells)
+
+def sub_cells_normalized(cell, level=15):
+    cells = [cell]
+
+    for dummy in range(level-cell.level()):
+        loopcells = cells; cells = []
+        for loopcell in loopcells:
+            for subcell in sub_cells(loopcell):
+                cells.append(subcell)
+
     return sorted(cells)
 
 def get_cell_ids(cells):
@@ -74,7 +99,7 @@ def get_cell_walk(lat, lng, radius, level=15):
     walk = [origin]
     right = origin.next()
     left = origin.prev()
-    for i in range(radius):
+    for dummy in range(radius):
         walk.append(right)
         walk.append(left)
         right = right.next()
