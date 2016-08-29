@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sqlite3, sys
+import sqlite3, sys, os
 from s2sphere import CellId
 
 def get_pokenames(filename):
@@ -63,7 +63,8 @@ def gen_csv(filename, dbfile):
     print('Done!')
 
 def main():
-    dbfilename = 'db2.sqlite'
+    if os.path.isfile('db2.sqlite'): dbfilename = 'db2.sqlite'
+    else: dbfilename = 'nm.sqlite'
     
     if len(sys.argv)<=1:
         print('currently supported commands:\n')
